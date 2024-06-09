@@ -1,0 +1,156 @@
+networks:
+  kafka-network:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: zookeeper
+    ports:
+      - "2181:2181"
+    restart: on-failure
+    networks:
+      - kafka-network
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    restart: on-failure
+    networks:
+      - kafka-network
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    volumes:
+      - ./influxdb/influxdb-data:/var/lib/influxdb2
+      - ./influxdb/influxdb-config:/etc/influxdb2
+    restart: on-failure
+    networks:
+      - kafka-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_INFLUX_USER: ${INFLUX_USER}
+      GF_INFLUX_PASSWORD: ${INFLUX_PASSWORD}
+      GF_INFLUX_URL: ${INFLUX_URL}
+      GF_INFLUX_ORG: ${INFLUX_ORG}
+      GF_INFLUX_BUCKET: ${INFLUX_BUCKET}
+      GF_INFLUX_TOKEN: ${INFLUX_TOKEN}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - influxdb
+    restart: on-failure
+    networks:
+      - kafka-network
+
+  web-logs-producer:
+    build:
+      context: .
+      dockerfile: dockerfile
+      args:
+        SERVICE_DIR: src/web-logs/producer
+    depends_on:
+      - kafka
+    restart: unless-stopped
+    volumes:
+      - ./src/web-logs/producer:/app
+    networks:
+      - kafka-network
+
+  web-logs-consumer:
+    build:
+      context: .
+      dockerfile: dockerfile
+      args:
+        SERVICE_DIR: src/web-logs/consumer
+    environment:
+      INFLUXDB_TOKEN: ${INFLUX_TOKEN}
+    depends_on:
+      - kafka
+      - influxdb
+    restart: unless-stopped
+    volumes:
+      - ./src/web-logs/consumer:/app
+    networks:
+      - kafka-network
+
+  iot-sensors-producer:
+    build:
+      context: .
+      dockerfile: dockerfile
+      args:
+        SERVICE_DIR: src/iot-sensors/producer
+    depends_on:
+      - kafka
+    restart: unless-stopped
+    volumes:
+      - ./src/iot-sensors/producer:/app
+    networks:
+      - kafka-network
+
+
+  iot-sensors-consumer:
+    build:
+      context: .
+      dockerfile: dockerfile
+      args:
+        SERVICE_DIR: src/iot-sensors/consumer
+    environment:
+      INFLUXDB_TOKEN: ${INFLUX_TOKEN}
+    depends_on:
+      - kafka
+      - influxdb
+    restart: unless-stopped
+    volumes:
+      - ./src/iot-sensors/consumer:/app
+    networks:
+      - kafka-network
+
+  financial-transactions-producer:
+    build:
+      context: .
+      dockerfile: dockerfile
+      args:
+        SERVICE_DIR: src/financial-transactions/producer
+    depends_on:
+      - kafka
+    restart: unless-stopped
+    volumes:
+      - ./src/financial-transactions/producer:/app
+    networks:
+      - kafka-network
+
+  financial-transactions-consumer:
+    build:
+      context: .
+      dockerfile: dockerfile
+      args:
+        SERVICE_DIR: src/financial-transactions/consumer
+    environment:
+      INFLUXDB_TOKEN: ${INFLUX_TOKEN}
+    depends_on:
+      - kafka
+      - influxdb
+    restart: unless-stopped
+    volumes:
+      - ./src/financial-transactions/consumer:/app
+    networks:
+      - kafka-network

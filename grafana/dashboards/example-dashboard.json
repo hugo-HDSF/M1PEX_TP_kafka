@@ -1,0 +1,92 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "datasource": "InfluxDB",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "query": "from(bucket: \"kafka_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"financial_transactions\" and r._field == \"amount\")\n  |> aggregateWindow(every: 1m, fn: sum, createEmpty: false)\n  |> yield(name: \"sum\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Transaction Amounts Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "InfluxDB",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "query": "from(bucket: \"kafka_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"web_logs\" and r._field == \"responseTime\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        }
+      ],
+      "title": "Average Response Time of Web Requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "InfluxDB",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 6,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "query": "from(bucket: \"kafka_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"iot_sensors\" and r._field == \"temperature\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "refId": "A"
+        },
+        {
+          "query": "from(bucket: \"kafka_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"iot_sensors\" and r._field == \"humidity\")\n  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+          "refId": "B"
+        }
+      ],
+      "title": "Temperature and Humidity Levels Over Time",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 30,
+  "title": "Kafka Data Dashboard",
+  "version": 1
+}

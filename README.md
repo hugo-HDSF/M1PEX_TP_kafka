@@ -52,7 +52,7 @@ make up
 ```
 
 > [!NOTE] 
-> Navigate to http://localhost:3000/dashboards, logon with admin:admin credentials to see the grafana dashboards list and select the `Kafka Data Dashboard` to see the live data.
+> Navigate to http://localhost:3000/dashboards, logon with `admin:admin` credentials to see the grafana dashboards list and select the `Kafka Data Dashboard` to see the live data.
 
 > [!TIP]  
 > Navigate to http://localhost:8086 to see the influxdb dashboard.
